@@ -1,0 +1,15 @@
+{
+  "name": "bjs-lab",
+  "version": "1.0.0",
+  "description": "a Magic Mirror module for my laboratory incantations",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "magic",
+    "mirror"
+  ],
+  "author": "Brad Simmons",
+  "license": "MIT"
+}
