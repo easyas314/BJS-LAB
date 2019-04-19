@@ -10,13 +10,17 @@ Module.register("BJS-lab", {
 
 	start: function(){
 		bjsLab = this;
-		Log.info("Started Module: " + bjsLab.name);
- 
-		bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {});
+		Log.log("Started module: " + bjsLab.name);
+
+		// send to my helper
+		bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
 	},
 
+	// receive from my helper
 	socketNotificationReceived: function(notification, payload){
-		Log.info("Helper Recieved notification: " + notification);
+		if (notification === "BJSLAB_NOTIFICATION") {
+			Log.log("BJS main recieved socketNotification: " + payload.msg);
+		};
 	},
 
 	// UI: Override dom generator.
