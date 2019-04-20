@@ -1,32 +1,70 @@
 //  BJS-lab.js
 
+// ideas:
+// https://forum.magicmirror.builders/topic/8534/head-first-developing-mm-module-for-extreme-beginners
+
 var bjsLab;
 
 Module.register("BJS-lab", {
-	// Default module config.
+	// Default module config. Over ride with main config.js
 	defaults: {
-		text: "The BJS Lab"
+		labName: "The BJS Lab",
+		workInterval: 5000
 	},
 
 	start: function(){
 		bjsLab = this;
 		Log.log("Started module: " + bjsLab.name);
 
-		// send to my helper
-		bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
+		// initialize key module variables
+		bjsLab.count = 0;
+		bjsLab.theList = [];
+
 	},
 
-	// receive from my helper
-	socketNotificationReceived: function(notification, payload){
-		if (notification === "BJSLAB_NOTIFICATION") {
-			Log.log("BJS main recieved socketNotification: " + payload.msg);
-		};
+	// handle system wide notifications
+	notificationReceived: function(notification, payload, sender) {
+		switch(notification) {
+		  case "DOM_OBJECTS_CREATED":
+			// sent 1st time all module objects have been rendered
+
+			// try notifying my helper
+			//bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
+
+			var timer = setInterval(()=>{
+				bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "more sugar"});
+				bjsLab.count++
+			}, bjsLab.config.workInterval)
+			break
+		}
 	},
 
 	// UI: Override dom generator.
 	getDom: function() {
 		var wrapper = document.createElement("div");
-		wrapper.innerHTML = this.config.text;
+		wrapper.className = "bjsContent";
+
+		// make a bold H1 element with the labName as the content & add to this division
+		var h1 = document.createElement("h1");
+		h1.innerHTML = bjsLab.config.labName;
+		wrapper.appendChild(h1);
+
+		// make another element & add to this division
+		var element = document.createElement("p");
+		element.innerHTML = "... addnl content ... count = " + bjsLab.count;
+		element.id = "ADDNL";
+		wrapper.appendChild(element);
+
 		return wrapper;
 	},
+
+	// receive from my helper
+	socketNotificationReceived: function(notification, payload){
+		if (notification === "BJSLAB_NOTIFICATION") {
+			//bjsLab.updateDom();
+			var elem = document.getElementById("ADDNL");
+      		elem.innerHTML = payload + " count:" + bjsLab.count;
+		};
+	},
+
 });
