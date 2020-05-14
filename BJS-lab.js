@@ -9,7 +9,12 @@ Module.register("BJS-lab", {
 	// Default module config. Over ride with main config.js
 	defaults: {
 		labName: "The BJS Lab",
-		workInterval: 5000
+		workInterval: 5000,
+		// also defaults for the helper code??
+		base_url: "https://api.weather.gov",
+		lat: 34.844740, //REQUIRED
+		lon: -82.394430, //REQUIRED
+		updateInterval: 900000, // 15 min
 	},
 
 	start: function(){
@@ -33,9 +38,9 @@ Module.register("BJS-lab", {
 
 			var timer = setInterval(()=>{
 				bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "more sugar"});
-				bjsLab.count++
-			}, bjsLab.config.workInterval)
-			break
+				bjsLab.count++;
+			}, bjsLab.config.workInterval);
+			break;
 		}
 	},
 
@@ -61,9 +66,9 @@ Module.register("BJS-lab", {
 	// receive from my helper
 	socketNotificationReceived: function(notification, payload){
 		if (notification === "BJSLAB_NOTIFICATION") {
-			//bjsLab.updateDom();
 			var elem = document.getElementById("ADDNL");
-      		elem.innerHTML = payload + " count:" + bjsLab.count;
+      		elem.innerHTML = payload;
+			bjsLab.updateDom();
 		};
 	},
 
