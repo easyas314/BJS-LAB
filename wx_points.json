@@ -1,0 +1,93 @@
+{
+    "@context": [
+        "https://raw.githubusercontent.com/geojson/geojson-ld/master/contexts/geojson-base.jsonld",
+        {
+            "wx": "https://api.weather.gov/ontology#",
+            "s": "https://schema.org/",
+            "geo": "http://www.opengis.net/ont/geosparql#",
+            "unit": "http://codes.wmo.int/common/unit/",
+            "@vocab": "https://api.weather.gov/ontology#",
+            "geometry": {
+                "@id": "s:GeoCoordinates",
+                "@type": "geo:wktLiteral"
+            },
+            "city": "s:addressLocality",
+            "state": "s:addressRegion",
+            "distance": {
+                "@id": "s:Distance",
+                "@type": "s:QuantitativeValue"
+            },
+            "bearing": {
+                "@type": "s:QuantitativeValue"
+            },
+            "value": {
+                "@id": "s:value"
+            },
+            "unitCode": {
+                "@id": "s:unitCode",
+                "@type": "@id"
+            },
+            "forecastOffice": {
+                "@type": "@id"
+            },
+            "forecastGridData": {
+                "@type": "@id"
+            },
+            "publicZone": {
+                "@type": "@id"
+            },
+            "county": {
+                "@type": "@id"
+            }
+        }
+    ],
+    "id": "https://api.weather.gov/points/34.8447,-82.3944",
+    "type": "Feature",
+    "geometry": {
+        "type": "Point",
+        "coordinates": [
+            -82.394400000000005,
+            34.844700000000003
+        ]
+    },
+    "properties": {
+        "@id": "https://api.weather.gov/points/34.8447,-82.3944",
+        "@type": "wx:Point",
+        "cwa": "GSP",
+        "forecastOffice": "https://api.weather.gov/offices/GSP",
+        "gridX": 63,
+        "gridY": 41,
+        "forecast": "https://api.weather.gov/gridpoints/GSP/63,41/forecast",
+        "forecastHourly": "https://api.weather.gov/gridpoints/GSP/63,41/forecast/hourly",
+        "forecastGridData": "https://api.weather.gov/gridpoints/GSP/63,41",
+        "observationStations": "https://api.weather.gov/gridpoints/GSP/63,41/stations",
+        "relativeLocation": {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [
+                    -82.362996899999999,
+                    34.836902000000002
+                ]
+            },
+            "properties": {
+                "city": "Greenville",
+                "state": "SC",
+                "distance": {
+                    "value": 2994.2272583507929,
+                    "unitCode": "unit:m"
+                },
+                "bearing": {
+                    "value": 286,
+                    "unitCode": "unit:degrees_true"
+                }
+            }
+        },
+        "forecastZone": "https://api.weather.gov/zones/forecast/SCZ006",
+        "county": "https://api.weather.gov/zones/county/SCC045",
+        "fireWeatherZone": "https://api.weather.gov/zones/fire/SCZ006",
+        "timeZone": "America/New_York",
+        "radarStation": "KGSP"
+    }
+}
+

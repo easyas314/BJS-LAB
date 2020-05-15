@@ -11,31 +11,21 @@ To use this module, add it to the modules array in the `config/config.js` file:
 ````javascript
 modules: [
 	{
-		module: "newsfeed",
+		module: "BJS-lab",
 		position: "bottom_bar",	// This can be any of the regions. Best results in center regions.
 		config: {
 			// The config property is optional.
 			// If no config is set, an example calendar is shown.
 			// See 'Configuration options' for more information.
-
-			feeds: [
-				{
-					title: "Wall Street Journal",
-					url: "https://feeds.a.dj.com/rss/RSSWSJD.xml"
-				},
-// 				{
-// 					title: "New York Times",
-// 					url: "http://www.nytimes.com/services/xml/rss/nyt/HomePage.xml",
-// 				},
-// 				{
-// 					title: "BBC",
-// 					url: "http://feeds.bbci.co.uk/news/video_and_audio/news_front_page/rss.xml?edition=uk",
-// 				},
-			]
 		}
 	}
 ]
 ````
+### Example urls:
+https://api.weather.gov/points/34.8447,-82.3944
+https://api.weather.gov/gridpoints/GSP/63,41/forecast
+https://api.weather.gov/gridpoints/GSP/63,41/forecast/hourly
+
 
 ### Notifications
 #### Interacting with the module
