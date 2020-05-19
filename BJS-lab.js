@@ -8,7 +8,7 @@ var bjsLab;
 Module.register("BJS-lab", {
 	// Default module config. Over ride with main config.js
 	defaults: {
-		labName: "The BJS Lab",
+		labName: "BJS-WX-Lab",
 		workInterval: 5000,
 		// also defaults for the helper code??
 		base_url: "https://api.weather.gov",
@@ -24,6 +24,7 @@ Module.register("BJS-lab", {
 		// initialize key module variables
 		bjsLab.count = 0;
 		bjsLab.theList = [];
+		bjsLab.data = {};
 
 	},
 
@@ -33,13 +34,13 @@ Module.register("BJS-lab", {
 		  case "DOM_OBJECTS_CREATED":
 			// sent 1st time all module objects have been rendered
 
-			// try notifying my helper
-			//bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
+			// try notifying my helper; 1 time gridpoint fetch
+			bjsLab.sendSocketNotification("WX_INIT_GRIDPOINT", {config: this.config, msg: "hi!"});
 
-			var timer = setInterval(()=>{
-				bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "more sugar"});
-				bjsLab.count++;
-			}, bjsLab.config.workInterval);
+			// var timer = setInterval(()=>{
+			// 	bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "more sugar"});
+			// 	bjsLab.count++;
+			// }, bjsLab.config.updateInterval);
 			break;
 		}
 	},
@@ -65,11 +66,16 @@ Module.register("BJS-lab", {
 
 	// receive from my helper
 	socketNotificationReceived: function(notification, payload){
-		if (notification === "BJSLAB_NOTIFICATION") {
+		console.log(`[${bjsLab.config.labName}]:socketNoteRcvd()`);
+		switch(notification) {
+		  case "WX_GRIDPOINT_GET":
+			// payload should have .msg and .config{}
+			bjsLab.data = payload.config;
 			var elem = document.getElementById("ADDNL");
-      		elem.innerHTML = payload;
+			elem.innerHTML = bjsLab.data.wxForecastGridURL;
 			bjsLab.updateDom();
-		};
+			break;
+		}
 	},
 
 });

@@ -11,5 +11,8 @@
     "mirror"
   ],
   "author": "Brad Simmons",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "got": "^11.1.4"
+  }
 }

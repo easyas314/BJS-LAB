@@ -1,66 +1,63 @@
 //  node_helper.js
 
 var NodeHelper = require("node_helper");
-var bjsHelper;
-var request = require("request");
-var moment = require("moment");
+console.log("Welcome to the WX-LAB node_helper.");
+//var bjsHelper;
+//var request = require("request");
+const got = require("got");
+// var moment = require("moment");
+// var now = moment(); // this will get the current date & time.
 
+console.log("... ready to export the WX-LAB node_helper methods...");
 module.exports = NodeHelper.create({
-
-	// not sure how to address these
-	defaults: {
-		base_url: "https://api.weather.gov",
-		lat: 34.844740, //REQUIRED
-		lon: -82.394430, //REQUIRED
-		updateInterval: 900000, // 15 min
+	// notice the name/value pair model ...
+	start: function() {
+		bjsHelper.name = "WX-HELPER";
+		bjsHelper.wxForecastGridURL = "";
+		bjsHelper.wxData = [];
+		console.log(`[${bjsHelper.name}]:start() completed.`);
 	},
 
-	start: function(){
-		bjsHelper = this;
-		bjsHelper.base_url= "https://api.weather.gov";
-		bjsHelper.lat= 34.844740; //REQUIRED
-		bjsHelper.lon= -82.394430; //REQUIRED
-		bjsHelper.updateInterval= 900000; // 15 min
-		//Log.info("Started Module: " + BJS_helper.name);
-		console.log(`[${bjsHelper.name}] Started helper module`);
-		//console.log("                     : " + BJS_helper.base_url);
-		//console.log("                     : " + BJS_helper.lat);
-		//console.log("                     : " + BJS_helper.lon);
-		bjsHelper.countdown = 100000;
-		// make immediate call to Wx points based on location
-		//	NWS tips: How do I determine the gridpoint for my location?
+	getWxGrid: function(config) {
+		console.log(`[${bjsHelper.name}]:getWxGrid()`);
 		//	You can retrieve the metadata for a given latitude/longitude coordinate with the /points endpoint (https://api.weather.gov/points/{lat},{lon}).
-		var wxPointsURL = bjsHelper.base_url + "/points/" + bjsHelper.lat + "," + bjsHelper.lon;
-		//  The forecastGridData property will provide a link to the correct gridpoint for that location.
+		// 		base_url: "https://api.weather.gov",
+		var wxPointsURL = config.base_url + "/points/" + config.lat + "," + config.lon;
+		//var pointsEndpoint = "points/" + config.lat + "," + config.lon;
+		console.log(`[${bjsHelper.name}]:getWxGrid() calling = ${wxPointsURL}`);
+		(async () => {
+			try {
+				// take the body object 'guts'
+				const {body} = await got(wxPointsURL, {
+					headers: {"User-Agent": "MM-wx-gov/0.1 suowwisq@gmail.com"}
+					,responseType: "json"
+					//, resolveBodyOnly: true
+				});
+				//console.log(`[${bjsHelper.name}]:getWxGrid() returned type = ${typeof(body)}`);
+				// body contains text, so make it a json object
 
-		// wx api needs a nice user-agent
-		const options = {
-			url: wxPointsURL,
-			headers: {
-			  "User-Agent": "MM-wx-gov / v0.1 suowwisq@gmail.com"
-			},
-			method: "GET"
-		  };
-		console.log(`[${bjsHelper.name}] Requesting gridpoint from ${wxPointsURL}`);
-		request(options, function( error, response, body) {
-			// error is null with a 200 so ..
-			//if(!error && response.statusCode == 200) {
-			if(response.statusCode == 200) {
-				//Good response
-				var resp = JSON.parse(body);
-				//resp.instanceId = payload.instanceId;
-				bjsHelper.wxForecastGridURL = resp.properties.forecastGridData;
+				// when the body OBJECT version is examined, it has PassThrough, etc ???
+				//console.log(`[${bjsHelper.name}]:getWxGrid() ---- body --------------------`);
+				//console.log(util.inspect(body, false, 1, true /* enable colors */))
+
+				farkle = JSON.parse(body);
+				// NOW it looks to follow the json output from the url in a browser...
+        		//console.log(`[${bjsHelper.name}]:getWxGrid() ---- farkle.properties --------------------`);
+				//console.log(util.inspect(farkle.properties, false, 2, true /* enable colors */))
+				//  The forecastGridData property will provide a link to the correct gridpoint for that location.
+				bjsHelper.wxForecastGridURL = farkle.properties.forecastGridData;
 				console.log(`[${bjsHelper.name}] wx-grid-url is ${bjsHelper.wxForecastGridURL}`);
-				bjsHelper.wxForecastHourlyURL = `${bjsHelper.wxForecastGridURL}/forecast/hourly`;
-				// now ask myself for a forecast?
-				//bjsHelper.sendSocketNotification("BJSLAB_WX_FORECAST_GET", {msg: "initial wx ask"});
-			} else {
-				console.log(`[${bjsHelper.name}] ERROR: response status = ${response.statusCode}`);
+				bjsHelper.sendSocketNotification("WX_GRIDPOINT_GET",
+					//{msg: `The next hour is:\n${wxData.hourly.properties.periods[0].shortForecast}`
+					{msg: "No wx data inspected yet."
+						, config: {wxForecastGridURL: bjsHelper.wxForecastGridURL}
+					} );
+			} catch (error) {
+				//console.log(error.response.body);
+				console.log(error);
+				//=> 'Internal server error ...'
 			}
-		});
-
-		console.log(`[${bjsHelper.name}] completed start function`);
-
+		})();
 	},
 
 	// simulate a time consuming operation
@@ -71,60 +68,41 @@ module.exports = NodeHelper.create({
 	},
 
 	notificationReceived: function (notification, payload) {
-		console.log(`[${bjsHelper.name}] some notification was received`);
-		if (notification === "ALL_MODULES_STARTED") {
-
-			//setTimeout(5000);
-			bjsHelper.sendSocketNotification("BJSLAB_NOTIFICATION", {
-				msg: "helper received ALL_MODULES_STARTED"
-			});
-
-			bjsHelper.sendSocketNotification("BJSLAB_WX_FORECAST_GET", {
-				msg: "please to get the forecast"
-			});
-
-		};
 		console.log(`[${bjsHelper.name}] received: ${notification}`);
 	},
 
 	socketNotificationReceived: function(notification, payload){
-		if (notification === "BJSLAB_WX_FORECAST_GET") {
-			console.log(`[${bjsHelper.name}] received BJSLAB_WX_FORECAST_GET: payload msg = ${payload.msg}`);
-			//bjsHelper.wasteTime(3000);
-			//make request to Wx API
+		console.log(`[${bjsHelper.name}]:socketNoteRcvd()`);
+		switch(notification) {
+		  case "WX_INIT_GRIDPOINT":
+			// payload should have .msg and .config{}
+			console.log(`[${bjsHelper.name}] received WX_INIT_GRIDPOINT: payload msg = ${payload.msg}`);
+			this.getWxGrid(payload.config);
+			break;
+
+		  case "WX_FORECAST_GET":
+			// payload should have .msg and .config{}
+			console.log(`[${bjsHelper.name}] received WX_FORECAST_GET: payload msg = ${payload.msg}`);
+			console.log(`[${bjsHelper.name}] ... wxForecastGridURL = ${bjsHelper.wxForecastGridURL}`);
+			if (bjsHelper.wxForecastGridURL === "") {
+				this.getWxGrid(payload.config);
+			}
+
+			//if data exists, return data
+			//else ask for data
 			// ? make 2 requests: 1 for regular (daily?) and 2 for hourly?  filterable reqst?
 			// separate function for building out the data into 1 structure?
+			// sent 1st time all module objects have been rendered
 
-			// wx api needs a nice user-agent
-			const options = {
-				url: bjsHelper.wxForecastHourlyURL,
-				headers: {
-					"User-Agent": "MM-wx-gov / v0.1 suowwisq@gmail.com"
-				},
-				method: "GET"
-			};
-			console.log(`[${bjsHelper.name}] Requesting forecast hourly ${options.url}`);
-			request(options, function( error, response, body) {
-				// error is null with a 200 so ..
-				//if(!error && response.statusCode == 200) {
-				if(response.statusCode == 200) {
-					//Good response
-					var resp = JSON.parse(body);
-					//resp.instanceId = payload.instanceId;
-					wxData.hourly.properties = resp.properties;
-					// test: send consumable data
-					bjsHelper.sendSocketNotification("BJSLAB_NOTIFICATION",
-						`The next hour is:\n${wxData.hourly.properties.periods[0].shortForecast}`);
-				} else {
-					console.log(`[${bjsHelper.name}] ERROR: response status = ${response.statusCode}`);
-				}
-			});
+			// try notifying my helper
+			//bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
 
-			//console.log( "[BJS-helper] WX-GRID-URL: " + bjsHelper.wxForecastGridURL );
-			bjsHelper.countdown--;
-			bjsHelper.sendSocketNotification("BJSLAB_NOTIFICATION", "byte me " + bjsHelper.countdown + " times!");
+			break;
+
+		  case "WX_FORECAST_TEST":
+			break;
 		}
-	}
+	},
 
 });
 
