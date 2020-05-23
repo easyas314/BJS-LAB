@@ -1,63 +1,85 @@
 //  node_helper.js
 
+// only 1 node_helper for all instances of a module type, so no default config
+// available within the module; your task to send desired config from module to helper
+
+//REQUIRED
 var NodeHelper = require("node_helper");
+
 console.log("Welcome to the WX-LAB node_helper.");
 //var bjsHelper;
 //var request = require("request");
-const got = require("got");
 // var moment = require("moment");
 // var now = moment(); // this will get the current date & time.
 
 console.log("... ready to export the WX-LAB node_helper methods...");
+
+// REQUIRED: NodeHelper.create
 module.exports = NodeHelper.create({
-	// notice the name/value pair model ...
+	// available instance properties
+	// this.name (str) -- name of module
+	// this.path (str) -- the path to the module
+	// this.expressApp (express instance) -- link to express instance to define extra routes
+	//		? module's /public folder
+	// this.io (socket io instance) -- in case you need to do Socket.IO magic
+	// requiresVersion
+
+	// init() -- not usual to subclass
+
+	// This method is called when all node helpers are loaded and the system is ready to boot up.
+	// The start method is a perfect place to define any additional module properties
 	start: function() {
-		bjsHelper.name = "WX-HELPER";
-		bjsHelper.wxForecastGridURL = "";
-		bjsHelper.wxData = [];
-		console.log(`[${bjsHelper.name}]:start() completed.`);
+		// this.name already avail? What is it for a node_helper?
+		this.wxForecastGridURL = "";
+		this.wxData = [];
+		console.log(`[${this.name}]:start() completed.`);
 	},
 
 	getWxGrid: function(config) {
-		console.log(`[${bjsHelper.name}]:getWxGrid()`);
+		console.log(`[${this.name}]:getWxGrid()`);
 		//	You can retrieve the metadata for a given latitude/longitude coordinate with the /points endpoint (https://api.weather.gov/points/{lat},{lon}).
 		// 		base_url: "https://api.weather.gov",
 		var wxPointsURL = config.base_url + "/points/" + config.lat + "," + config.lon;
 		//var pointsEndpoint = "points/" + config.lat + "," + config.lon;
-		console.log(`[${bjsHelper.name}]:getWxGrid() calling = ${wxPointsURL}`);
-		(async () => {
-			try {
-				// take the body object 'guts'
-				const {body} = await got(wxPointsURL, {
-					headers: {"User-Agent": "MM-wx-gov/0.1 suowwisq@gmail.com"}
-					,responseType: "json"
-					//, resolveBodyOnly: true
-				});
-				//console.log(`[${bjsHelper.name}]:getWxGrid() returned type = ${typeof(body)}`);
+		console.log(`[${this.name}]:getWxGrid() calling = ${wxPointsURL}`);
+		this.fetchData(wxPointsURL)
+			.then(data => {
+				if (!data || !data.properties || !data.properties.forecastGridData) {
+					// Did not receive usable new data.
+					// Maybe this needs a better check?
+					return;
+				}
+				//	headers: {"User-Agent": "MM-wx-gov/0.1 suowwisq@gmail.com"}
+
+				//console.log(`[${this.name}]:getWxGrid() returned type = ${typeof(body)}`);
 				// body contains text, so make it a json object
 
 				// when the body OBJECT version is examined, it has PassThrough, etc ???
-				//console.log(`[${bjsHelper.name}]:getWxGrid() ---- body --------------------`);
+				//console.log(`[${this.name}]:getWxGrid() ---- body --------------------`);
 				//console.log(util.inspect(body, false, 1, true /* enable colors */))
 
-				farkle = JSON.parse(body);
+				//farkle = JSON.parse(body);
 				// NOW it looks to follow the json output from the url in a browser...
-        		//console.log(`[${bjsHelper.name}]:getWxGrid() ---- farkle.properties --------------------`);
+        		//console.log(`[${this.name}]:getWxGrid() ---- farkle.properties --------------------`);
 				//console.log(util.inspect(farkle.properties, false, 2, true /* enable colors */))
 				//  The forecastGridData property will provide a link to the correct gridpoint for that location.
-				bjsHelper.wxForecastGridURL = farkle.properties.forecastGridData;
-				console.log(`[${bjsHelper.name}] wx-grid-url is ${bjsHelper.wxForecastGridURL}`);
-				bjsHelper.sendSocketNotification("WX_GRIDPOINT_GET",
+				this.wxForecastGridURL = data.properties.forecastGridData;
+				console.log(`[${this.name}] wx-grid-url is ${this.wxForecastGridURL}`);
+				this.sendSocketNotification("WX_GRIDPOINT_GET",
 					//{msg: `The next hour is:\n${wxData.hourly.properties.periods[0].shortForecast}`
 					{msg: "No wx data inspected yet."
-						, config: {wxForecastGridURL: bjsHelper.wxForecastGridURL}
+						, config: {wxForecastGridURL: this.wxForecastGridURL}
 					} );
-			} catch (error) {
-				//console.log(error.response.body);
-				console.log(error);
-				//=> 'Internal server error ...'
-			}
-		})();
+			})
+			.catch(function(request) {
+				Log.error("Could not load data ... ", request);
+			})
+			.finally(() => this.updateAvailable());
+	},
+
+	updateAvailable: function() {
+		//this.delegate.updateAvailable(this);
+		console.log(`[${this.name}] WX UPDATE AVAILABLE!`);
 	},
 
 	// simulate a time consuming operation
@@ -68,23 +90,24 @@ module.exports = NodeHelper.create({
 	},
 
 	notificationReceived: function (notification, payload) {
-		console.log(`[${bjsHelper.name}] received: ${notification}`);
+		console.log(`[${this.name}] received: ${notification}`);
 	},
 
+	// socket established as soon as module sends its first message via sendSocketNotification
 	socketNotificationReceived: function(notification, payload){
-		console.log(`[${bjsHelper.name}]:socketNoteRcvd()`);
+		console.log(`[${this.name}]:socketNoteRcvd()`);
 		switch(notification) {
 		  case "WX_INIT_GRIDPOINT":
-			// payload should have .msg and .config{}
-			console.log(`[${bjsHelper.name}] received WX_INIT_GRIDPOINT: payload msg = ${payload.msg}`);
+			// payload should be the module config{}
+			console.log(`[${this.name}] received WX_INIT_GRIDPOINT`);
 			this.getWxGrid(payload.config);
 			break;
 
 		  case "WX_FORECAST_GET":
 			// payload should have .msg and .config{}
-			console.log(`[${bjsHelper.name}] received WX_FORECAST_GET: payload msg = ${payload.msg}`);
-			console.log(`[${bjsHelper.name}] ... wxForecastGridURL = ${bjsHelper.wxForecastGridURL}`);
-			if (bjsHelper.wxForecastGridURL === "") {
+			console.log(`[${this.name}] received WX_FORECAST_GET: payload msg = ${payload.msg}`);
+			console.log(`[${this.name}] ... wxForecastGridURL = ${this.wxForecastGridURL}`);
+			if (this.wxForecastGridURL === "") {
 				this.getWxGrid(payload.config);
 			}
 
@@ -94,8 +117,8 @@ module.exports = NodeHelper.create({
 			// separate function for building out the data into 1 structure?
 			// sent 1st time all module objects have been rendered
 
-			// try notifying my helper
-			//bjsLab.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
+			// try notifying my module
+			//this.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
 
 			break;
 
@@ -103,6 +126,25 @@ module.exports = NodeHelper.create({
 			break;
 		}
 	},
+
+	// A convenience function to make requests. It returns a promise.
+	fetchData: function(url, method = "GET", data = null) {
+		return new Promise(function(resolve, reject) {
+			var request = new XMLHttpRequest();
+			request.open(method, url, true);
+			request.onreadystatechange = function() {
+				if (this.readyState === 4) {
+					if (this.status === 200) {
+						resolve(JSON.parse(this.response));
+					} else {
+						reject(request);
+					}
+				}
+			};
+			request.send();
+		});
+	}
+	// stop() -- really should gracefully close open connections, stop sub-process,etc
 
 });
 
