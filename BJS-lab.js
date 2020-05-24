@@ -30,7 +30,7 @@ Module.register("BJS-lab", {
 	// ... most cases do not need to subclass this
 	loaded: function(callback) {
 		//this.finishLoading();
-		Log.log(`${this.name} is loaded!`);
+		Log.log(`${this.name} module is loaded!`);
 		callback();
 	},
 
@@ -49,13 +49,13 @@ Module.register("BJS-lab", {
 	// called after all modules loaded; dom object not yet created; perfect place to define any
 	//	additional module properties
 	start: function(){
-		Log.log("Started module: " + this.name);
+		Log.log(`${this.name} module start() called`);
 
 		// initialize key module variables
 		this.count = 0;
 		this.theList = [];
 		this.labdata = {};
-
+		this.sendSocketNotification("INIT", this.config);
 	},
 
 	// The getScripts method is called to request any additional scripts that need to be loaded.
@@ -94,28 +94,34 @@ Module.register("BJS-lab", {
 	// MODULE_DOM_CREATED - This module's dom has been fully loaded. You can now access your
 	//						 module's dom objects.
 	notificationReceived: function(notification, payload, sender) {
+		// lets be noisy and log these
 		if (sender) {
-			Log.log(this.name + " received a module notification: " + notification + " from sender: " + sender.name);
+			if (sender.name != "clock") {
+				Log.log(`${this.name} module notificationReceived: ${notification} from sender: ${sender.name}`);
+			}
 		} else {
-			Log.log(this.name + " received a system notification: " + notification);
+			Log.log(`${this.name} module system notification received: ${notification}`);
 		}
 
+		// take action based on the notification
 		switch(notification) {
-		  case "ALL_MODULES_STARTED":
 
+		  case "MODULE_DOM_CREATED":
+			// notify my helper to start
+			this.sendSocketNotification("START");
+			break;
+
+		  case "ALL_MODULES_STARTED":
 			// this will send all other modules this notification
 			this.sendNotification("BJS-LAB-ALIVE!", {msg:"any object for payload"});
 
-			// try notifying my helper; 1 time config and gridpoint fetch
-			this.sendSocketNotification("WX_INIT_GRIDPOINT", this.config);
-
 			//this.sendSocketNotification("WX_INIT_GRIDPOINT", {config: this.config, msg: "hi!"});
-
 			// var timer = setInterval(()=>{
 			// 	this.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "more sugar"});
 			// 	this.count++;
 			// }, this.config.updateInterval);
 			break;
+
 		}
 	},
 
@@ -123,7 +129,7 @@ Module.register("BJS-lab", {
 	// NOTE: If the user did not configure a default header, no header will be displayed and
 	// thus this method will not be called.
 	getHeader: function() {
-		return this.data.header + " + text from module getHeader";
+		return this.data.header + " (it's awesome)";
 	},
 
 	// Whenever MM needs to update the screen; start or refresh
@@ -140,7 +146,7 @@ Module.register("BJS-lab", {
 		// make another element & add to this division
 		var element = document.createElement("p");
 		element.innerHTML = "... addnl content ... count = " + this.count;
-		element.id = "ADDNL";
+		element.id = "theBJSLABtarget";
 		wrapper.appendChild(element);
 
 		return wrapper;
@@ -155,8 +161,16 @@ Module.register("BJS-lab", {
 	// Note 2: The socket connection is established as soon as the module sends its first message
 	//		 using sendSocketNotification.
 	socketNotificationReceived: function(notification, payload){
-		console.log(`[${this.config.labName}]:socketNoteRcvd()`);
+		Log.info(`[${this.config.labName}]:socketNoteRcvd() notification=${notification}`);
 		switch(notification) {
+		  case "WX_INIT_GRIDPOINT_RET":
+			  // payload should have the points json
+			  Log.log(`[${this.config.labName}]:socketNoteRcvd() payload... =${payload.properties.forecastGridData}`);
+    		  this.labdata.wxForecastGridURL = payload.properties.forecastGridData;
+			  var elem = document.getElementById("theBJSLABtarget");
+			  elem.innerHTML = "!!!!   " + payload.properties.wxForecastGridData;
+			  this.updateDom();
+			  break;
 		  case "WX_GRIDPOINT_GET":
 			// payload should have .msg and .config{}
 			this.labdata = payload.config;

@@ -13,6 +13,7 @@
   "author": "Brad Simmons",
   "license": "MIT",
   "dependencies": {
-    "got": "^11.1.4"
+    "got": "^11.1.4",
+    "node-fetch": "^2.6.0"
   }
 }
