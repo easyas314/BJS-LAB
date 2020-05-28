@@ -13,11 +13,12 @@ Module.register("BJS-lab", {
 	// Default module config. Override with main config.js
 	defaults: {
 		labName: "BJS-WX-Lab",
-		workInterval: 5000,
 		// also defaults for the helper code??
 		base_url: "https://api.weather.gov",
 		lat: 34.844740, //REQUIRED
 		lon: -82.394430, //REQUIRED
+		initialLoadDelay: 1000, // .5 sec
+		retryDelay: 2500, // 2.5 sec
 		updateInterval: 900000, // 15 min
 	},
 
@@ -54,7 +55,8 @@ Module.register("BJS-lab", {
 		// initialize key module variables
 		this.count = 0;
 		this.theList = [];
-		this.labdata = {};
+		this.labdata = {msg: ":-)", fore: {}, hourly: {}};
+		this.config.wxForecastGridURL = "no GRID URL";
 		this.sendSocketNotification("INIT", this.config);
 	},
 
@@ -85,6 +87,19 @@ Module.register("BJS-lab", {
 		return false; // { en: "translations/en.json", de: "translations/de.json" }
 	},
 
+	// Schedule next update
+	scheduleUpdate: function(delay) {
+		var nextLoad = this.config.updateInterval;
+		if (typeof delay !== "undefined" && delay >= 0) {
+			nextLoad = delay;
+		}
+
+		var self = this;
+		setTimeout(function() {
+			self.sendSocketNotification("WX_FORECAST_GET", self.config);
+		}, nextLoad);
+	},
+
 	// handle system wide notifications
 
 	// Note: the system sends three notifications when starting up. These notifications could come
@@ -108,18 +123,12 @@ Module.register("BJS-lab", {
 
 		  case "MODULE_DOM_CREATED":
 			// notify my helper to start
-			this.sendSocketNotification("START");
+			// this.sendSocketNotification("START");
 			break;
 
 		  case "ALL_MODULES_STARTED":
 			// this will send all other modules this notification
 			this.sendNotification("BJS-LAB-ALIVE!", {msg:"any object for payload"});
-
-			//this.sendSocketNotification("WX_INIT_GRIDPOINT", {config: this.config, msg: "hi!"});
-			// var timer = setInterval(()=>{
-			// 	this.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "more sugar"});
-			// 	this.count++;
-			// }, this.config.updateInterval);
 			break;
 
 		}
@@ -132,21 +141,47 @@ Module.register("BJS-lab", {
 		return this.data.header + " (it's awesome)";
 	},
 
+	processWX: function(data) {
+		// process wx data
+		// if (!data.properties || !data.properties.forecastGridData) {
+		//if (!data || !data.hours || typeof data.hours[0].time === "undefined") {
+		if (!data || !data.properties) {
+			Log.error(this.name + ": Did not receive usable data.");
+			return;
+		} else {
+			Log.info(`${this.name} : updated ${data.properties.updateTime}`);
+			var elem = document.getElementById("target1");
+			this.labdata.msg = data.properties.updateTime;
+			this.labdata.fore = data.properties;
+		}
+
+		// this.updateDom(speed) -- when the module needs to be updated, call this. If speed is defined,
+		// 					content update will be animated, but only if the content will really change.
+		//this.updateDom(this.config.animationSpeed);
+		this.updateDom();
+		this.scheduleUpdate(this.config.updateInterval);
+	},
+
 	// Whenever MM needs to update the screen; start or refresh
 	// 	... module asks for refresh via this.updateDom()
 	getDom: function() {
 		var wrapper = document.createElement("div");
 		wrapper.className = "bjsContent";
 
-		// make a bold H1 element with the labName as the content & add to this division
-		var h1 = document.createElement("h1");
-		h1.innerHTML = this.config.labName;
-		wrapper.appendChild(h1);
+		// make a bold H2 element with the labName as the content & add to this division
+		var h2 = document.createElement("h2");
+		h2.innerHTML = this.config.labName;
+		wrapper.appendChild(h2);
 
 		// make another element & add to this division
 		var element = document.createElement("p");
-		element.innerHTML = "... addnl content ... count = " + this.count;
-		element.id = "theBJSLABtarget";
+		element.innerHTML = this.config.wxForecastGridURL;
+		wrapper.appendChild(element);
+
+		// make another element & add to this division
+		var element = document.createElement("p");
+		element.innerHTML = this.labdata.msg;
+		element.id = "target1";
 		wrapper.appendChild(element);
 
 		return wrapper;
@@ -163,23 +198,17 @@ Module.register("BJS-lab", {
 	socketNotificationReceived: function(notification, payload){
 		Log.info(`[${this.config.labName}]:socketNoteRcvd() notification=${notification}`);
 		switch(notification) {
-		  case "WX_INIT_GRIDPOINT_RET":
+		  case "INIT_DONE":
 			  // payload should have the points json
 			  Log.log(`[${this.config.labName}]:socketNoteRcvd() payload... =${payload.properties.forecastGridData}`);
-    		  this.labdata.wxForecastGridURL = payload.properties.forecastGridData;
-			  var elem = document.getElementById("theBJSLABtarget");
-			  elem.innerHTML = "!!!!   " + payload.properties.wxForecastGridData;
+    		  this.config.wxForecastGridURL = payload.properties.forecastGridData;
 			  this.updateDom();
+			  this.scheduleUpdate(this.config.initialLoadDelay);
 			  break;
-		  case "WX_GRIDPOINT_GET":
-			// payload should have .msg and .config{}
-			this.labdata = payload.config;
-			var elem = document.getElementById("ADDNL");
-			elem.innerHTML = this.labdata.wxForecastGridURL;
-
-			// this.updateDom(speed) -- when the module needs to be updated, call this. If speed is defined,
-			// 					content update will be animated, but only if the content will really change.
-			this.updateDom();
+		  case "WX_DATA":
+			// payload should have json body
+			// this.labdata = payload;
+			this.processWX(payload);
 			break;
 		}
 	},

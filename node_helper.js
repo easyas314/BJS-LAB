@@ -47,33 +47,22 @@ module.exports = NodeHelper.create({
 			// payload should be the module config{}
 			this.config = payload;
 			console.log(`[${this.name} helper]: Initialized.`);
-			this.getWxGrid();
+			this.initWX();
 			break;
 
 		  case "START":
 			// no payload
 			if (this.wxForecastGridURL == "") {
-				//this.getWxGrid();
+				//this.initWX();
 			}
 			//this.startWx();
 			break;
 
-		  case "WX_INIT_GRIDPOINT":
-			// payload should be the module config{}
-			// this.getWxGrid(payload);
-			break;
-
 		  case "WX_FORECAST_GET":
-			// payload should have .msg and .config{}
-			//if data exists, return data
-			//else ask for data
-			// ? make 2 requests: 1 for regular (daily?) and 2 for hourly?  filterable reqst?
-			// separate function for building out the data into 1 structure?
-			// sent 1st time all module objects have been rendered
-
-			// try notifying my module
-			//this.sendSocketNotification("BJSLAB_NOTIFICATION", {msg : "BJS main start"});
-
+			// payload should be the module config{}
+			this.config = payload;
+			console.log(`[${this.name} helper]: Initialized.`);
+			this.getWxForecast();
 			break;
 
 		  case "WX_FORECAST_TEST":
@@ -81,60 +70,57 @@ module.exports = NodeHelper.create({
 		}
 	},
 
-	processWxGrid: function(pointsJSON) {
-		// if (!pointsJSON.properties || !pointsJSON.properties.forecastGridData) {
-		// 	// Did not receive usable new data.
-		// 	// Maybe this needs a better check?
-		// 	return;
-		// }
-    	config.wxForecastGridURL = pointsJSON.properties.forecastGridData;
-    	console.log(`${this.name} helper] processWxGrid() ... gridURL = ${pointsJSON.properties.forecastGridData}`);
-		this.sendSocketNotification("WX_INIT_GRIDPOINT_RET", pointsJSON.properties.forecastGridData);
-		return;
-	},
-
-	getWxGrid: function() {
+	initWX: function() {
 		var self = this;
 		// this is called to get the NOAA gridpints json
-		console.log(`[${self.name} helper]:getWxGrid() started`);
+		console.log(`[${self.name} helper]:initWX() started`);
 		//	You can retrieve the metadata for a given latitude/longitude coordinate with the /points endpoint (https://api.weather.gov/points/{lat},{lon}).
 		// 		base_url: "https://api.weather.gov",
-		var wxPointsURL = self.config.base_url + "/points/" + self.config.lat + "," + self.config.lon;
-		fetch(wxPointsURL)
+		var wxURL = self.config.base_url + "/points/" + self.config.lat + "," + self.config.lon;
+		fetch(wxURL)
 			.then(function (response) {
 				if (response.status === 200) {
 					return response.json();
 				} else {
-					console.log(`[${self.name} helper]:getWxGrid() sendSocket ERROR`);
+					console.log(`[${self.name} helper]:initWX() sendSocket ERROR`);
 					self.sendSocketNotification("ERROR", response.status)
 				}
 			})
 			.then(function(body) {
-				console.log(`[${self.name} helper]:getWxGrid() sendSocket WX_INIT_GRIDPOINT_RET`);
-			 	self.sendSocketNotification("WX_INIT_GRIDPOINT_RET", body);
+				console.log(`[${self.name} helper]:initWX() sendSocket INIT_DONE`);
+			 	self.sendSocketNotification("INIT_DONE", body);
 			})
-			//.then(json => this.processWxGrid(json))
-			// .then(function (myJson) {
-			// 	this.config.wxForecastGridURL = myJson.properties.forecastGridData;
-			// 	//sendSocketNotification("WX_INIT_GRIDPOINT_RET", this.config.wxForecastGridURL);
-			// 	console.log(`[${this.name} helper]:getWxGrid() returned = ${this.config.wxForecastGridURL}`);
-			// })
 			.catch((error) => {
 				console.error("Error:", error);
 				//this.sendSocketNotification("ERROR", error.name);
 			});
 	},
 
-	// this.callWxPoints(this.config, wxPointsURL, (notification, payload) => {
-	// 	this.sendSocketNotification(notification, payload);
-	// })
-	callPointsURL: function(cfg, url, callback) {
-
-	},
-
-	updateAvailable: function() {
-		//this.delegate.updateAvailable(this);
-		console.log(`[${this.name} helper] WX UPDATE AVAILABLE!`);
+	getWxForecast: function(hourly="") {
+		var self = this;
+		// this is called to get the NOAA forecast; which one?
+		// ? make 2 requests: 1 for regular (daily?) and 2 for hourly?  filterable reqst?
+		console.log(`[${self.name} helper]:getWxForecast() started`);
+		var wxURL = self.config.wxForecastGridURL + "/forecast";
+		fetch(wxURL)
+			.then(function (response) {
+				if (response.status === 200) {
+					return response.json();
+				} else {
+					console.log(`[${self.name} helper]:getWxForecast() sendSocket ERROR`);
+					self.sendSocketNotification("ERROR", response.status)
+				}
+			})
+			.then(function(body) {
+				console.log(`[${self.name} helper]:getWxForecast() sendSocket WX_DATA`);
+				// variant for which endpoint?
+				// pre-set payload.fore vs payload.hourly ? payload.type and payload.data ?
+			 	self.sendSocketNotification("WX_DATA", body);
+			})
+			.catch((error) => {
+				console.error("Error:", error);
+				//this.sendSocketNotification("ERROR", error.name);
+			});
 	},
 
 	// simulate a time consuming operation
@@ -148,25 +134,6 @@ module.exports = NodeHelper.create({
 		console.log(`[${this.name} helper] received: ${notification}`);
 	},
 
-	// A convenience function to make requests. It returns a promise.
-	fetchData: function(url, method = "GET", data = null) {
-		return new Promise(function(resolve, reject) {
-			var request = new XMLHttpRequest();
-			//request.open(method, url, true);
-			request.open(method, url, false); // synchronous
-			request.setRequestHeader("User-Agent", "MM-wx-gov/0.1 suowwisq@gmail.com");
-			request.onreadystatechange = function() {
-				if (this.readyState === 4) {
-					if (this.status === 200) {
-						resolve(JSON.parse(this.response));
-					} else {
-						reject(request);
-					}
-				}
-			};
-			request.send();
-		});
-	}
 	// stop() -- really should gracefully close open connections, stop sub-process,etc
 
 });
