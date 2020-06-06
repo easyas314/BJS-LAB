@@ -1,0 +1,156 @@
+{
+    "@context": [
+      "https://raw.githubusercontent.com/geojson/geojson-ld/master/contexts/geojson-base.jsonld",
+      {
+        "wx": "https://api.weather.gov/ontology#",
+        "s": "https://schema.org/",
+        "geo": "http://www.opengis.net/ont/geosparql#",
+        "unit": "http://codes.wmo.int/common/unit/",
+        "@vocab": "https://api.weather.gov/ontology#",
+        "geometry": {
+          "@id": "s:GeoCoordinates",
+          "@type": "geo:wktLiteral"
+        },
+        "city": "s:addressLocality",
+        "state": "s:addressRegion",
+        "distance": {
+          "@id": "s:Distance",
+          "@type": "s:QuantitativeValue"
+        },
+        "bearing": {
+          "@type": "s:QuantitativeValue"
+        },
+        "value": {
+          "@id": "s:value"
+        },
+        "unitCode": {
+          "@id": "s:unitCode",
+          "@type": "@id"
+        },
+        "forecastOffice": {
+          "@type": "@id"
+        },
+        "forecastGridData": {
+          "@type": "@id"
+        },
+        "publicZone": {
+          "@type": "@id"
+        },
+        "county": {
+          "@type": "@id"
+        }
+      }
+    ],
+    "id": "https://api.weather.gov/stations/KGMU/observations/2020-06-05T22:53:00+00:00",
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -82.35,
+        34.85
+      ]
+    },
+    "properties": {
+      "@id": "https://api.weather.gov/stations/KGMU/observations/2020-06-05T22:53:00+00:00",
+      "@type": "wx:ObservationStation",
+      "elevation": {
+        "value": 319,
+        "unitCode": "unit:m"
+      },
+      "station": "https://api.weather.gov/stations/KGMU",
+      "timestamp": "2020-06-05T22:53:00+00:00",
+      "rawMessage": "KGMU 052253Z 21007KT 10SM FEW033 28/22 A2990 RMK AO2 SLP116 T02830217",
+      "textDescription": "Mostly Clear",
+      "icon": "https://api.weather.gov/icons/land/day/few?size=medium",
+      "presentWeather": [],
+      "temperature": {
+        "value": 28.30000000000001,
+        "unitCode": "unit:degC",
+        "qualityControl": "qc:V"
+      },
+      "dewpoint": {
+        "value": 21.700000000000045,
+        "unitCode": "unit:degC",
+        "qualityControl": "qc:V"
+      },
+      "windDirection": {
+        "value": 210,
+        "unitCode": "unit:degree_(angle)",
+        "qualityControl": "qc:V"
+      },
+      "windSpeed": {
+        "value": 3.6,
+        "unitCode": "unit:m_s-1",
+        "qualityControl": "qc:V"
+      },
+      "windGust": {
+        "value": null,
+        "unitCode": "unit:m_s-1",
+        "qualityControl": "qc:Z"
+      },
+      "barometricPressure": {
+        "value": 101250,
+        "unitCode": "unit:Pa",
+        "qualityControl": "qc:V"
+      },
+      "seaLevelPressure": {
+        "value": 101160,
+        "unitCode": "unit:Pa",
+        "qualityControl": "qc:V"
+      },
+      "visibility": {
+        "value": 16090,
+        "unitCode": "unit:m",
+        "qualityControl": "qc:C"
+      },
+      "maxTemperatureLast24Hours": {
+        "value": null,
+        "unitCode": "unit:degC",
+        "qualityControl": null
+      },
+      "minTemperatureLast24Hours": {
+        "value": null,
+        "unitCode": "unit:degC",
+        "qualityControl": null
+      },
+      "precipitationLastHour": {
+        "value": null,
+        "unitCode": "unit:m",
+        "qualityControl": "qc:Z"
+      },
+      "precipitationLast3Hours": {
+        "value": null,
+        "unitCode": "unit:m",
+        "qualityControl": "qc:Z"
+      },
+      "precipitationLast6Hours": {
+        "value": null,
+        "unitCode": "unit:m",
+        "qualityControl": "qc:Z"
+      },
+      "relativeHumidity": {
+        "value": 67.46468752123718,
+        "unitCode": "unit:percent",
+        "qualityControl": "qc:C"
+      },
+      "windChill": {
+        "value": null,
+        "unitCode": "unit:degC",
+        "qualityControl": "qc:V"
+      },
+      "heatIndex": {
+        "value": 30.891219123673636,
+        "unitCode": "unit:degC",
+        "qualityControl": "qc:V"
+      },
+      "cloudLayers": [
+        {
+          "base": {
+            "value": 1010,
+            "unitCode": "unit:m"
+          },
+          "amount": "FEW"
+        }
+      ]
+    }
+  }
